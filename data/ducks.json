@@ -1,0 +1,18 @@
+{
+  "defaultDucks": [
+    "Vịt Vàng",
+    "Vịt Xanh", 
+    "Vịt Đỏ",
+    "Vịt Tím",
+    "Vịt Cam",
+    "Vịt Hồng"
+  ],
+  "raceHistory": [],
+  "settings": {
+    "maxDucks": 10,
+    "minDucks": 2,
+    "raceDuration": 30000,
+    "updateInterval": 100
+  }
+}
+

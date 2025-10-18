@@ -1,0 +1,139 @@
+---
+alwaysApply: true
+---
+Bạn là chuyên gia lập trình web fullstack (frontend + backend realtime).  
+Hãy tạo **website trò đua vịt trực tuyến** gồm 2 phần: **Admin** và **User**.
+
+---
+
+## 🧩 MỤC TIÊU DỰ ÁN
+Website cho phép người xem theo dõi **trò đua vịt realtime**, admin là người tạo và điều khiển cuộc đua.  
+Người dùng (user) chỉ cần truy cập website là có thể xem trực tiếp diễn biến cuộc đua.
+
+---
+
+## 👥 PHÂN QUYỀN NGƯỜI DÙNG
+| Vai trò | Mô tả | Quyền |
+|----------|--------|--------|
+| Admin | Đăng nhập, nhập danh sách vịt, khởi động / reset cuộc đua | Full control |
+| User | Không cần đăng nhập, chỉ xem realtime | Xem cuộc đua |
+
+---
+
+## ⚙️ CHỨC NĂNG CHI TIẾT
+
+### **A. Admin**
+- Trang đăng nhập (email, password). Có thể hardcode sẵn tài khoản.
+- Sau khi đăng nhập:
+  - Nhập danh sách "vịt" (ví dụ: Vịt A, Vịt B, Vịt C...).
+  - Nút **Start Race** để bắt đầu đua.
+  - Server mô phỏng vịt di chuyển ngẫu nhiên theo thời gian.
+  - Hiển thị realtime tiến trình đua.
+  - Khi kết thúc, hiển thị bảng **kết quả thắng cuộc**.
+  - Nút **Reset Race** để làm mới.
+
+### **B. User**
+- Không cần đăng nhập.
+- Xem được cuộc đua realtime:
+  - Hiển thị danh sách vịt và tiến trình di chuyển.
+  - Khi đua kết thúc, hiển thị thông báo “Vịt thắng cuộc là: …”.
+- Dữ liệu hiển thị realtime qua **Socket.IO**.
+
+---
+
+## 🛠️ CÔNG NGHỆ SỬ DỤNG
+| Thành phần | Công nghệ | Ghi chú |
+|-------------|------------|---------|
+| Frontend | HTML + Tailwind CSS + JavaScript | Giao diện hiển thị và animation |
+| Backend | Node.js + Express + Socket.IO | Quản lý logic đua & realtime |
+| Auth | JWT hoặc basic login | Đơn giản chỉ cho admin |
+| SEO/UX | Meta tags, responsive mobile, tối ưu tốc độ tải |
+| Triển khai | Render / Railway / Vercel | Tùy chọn |
+
+---
+
+## 🧱 CẤU TRÚC THƯ MỤC
+/project-root
+│
+├── server.js # backend chính (Node.js + Socket.IO)
+├── package.json
+│
+├── /public
+│ ├── index.html # giao diện User xem đua
+│ ├── admin.html # giao diện Admin
+│ ├── /assets
+│ │ ├── /css/style.css
+│ │ ├── /js/script.js
+│ │ └── /images/
+│
+└── /data
+└── ducks.json # lưu tạm danh sách vịt (tùy chọn)
+---
+
+## 💻 LOGIC SOCKET.IO
+- Khi admin bấm **Start**, server gửi sự kiện `"raceStart"` cho toàn bộ client.
+- Server mô phỏng cuộc đua bằng cách gửi sự kiện `"raceUpdate"` theo thời gian (vị trí từng vịt).
+- Khi có kết quả, gửi `"raceEnd"` chứa danh sách kết quả và thông báo vịt thắng.
+- Client (user) nhận sự kiện và cập nhật giao diện.
+
+---
+
+## 🎨 YÊU CẦU UI / UX
+- Giao diện **User**:
+  - Nền màu xanh hoặc vui nhộn như hồ nước.
+  - Mỗi “vịt” hiển thị theo dạng **progress bar** hoặc biểu tượng vịt di chuyển.
+  - Có banner hoặc popup chúc mừng vịt thắng.
+  - Responsive mobile.
+
+- Giao diện **Admin**:
+  - Form nhập tên vịt (nhiều dòng hoặc danh sách).
+  - Nút Start / Reset.
+  - Bảng hiển thị tiến trình realtime.
+  - Giao diện đơn giản, gọn gàng, dễ dùng.
+
+---
+
+## 🔄 QUY TRÌNH HOẠT ĐỘNG
+1. Admin đăng nhập vào `/admin.html`.
+2. Nhập danh sách vịt → bấm **Start**.
+3. Server gửi tín hiệu realtime → vịt bắt đầu di chuyển (random tốc độ).
+4. User tại `/index.html` thấy vịt di chuyển realtime.
+5. Khi vịt về đích → hiển thị kết quả.
+6. Admin có thể **Reset** để tạo đua mới.
+
+---
+
+## 🚀 YÊU CẦU CODE
+- Viết code **chuẩn SEO**, **tối ưu responsive**, **hiệu năng tốt**.
+- Tách riêng code frontend/backend rõ ràng.
+- Dễ mở rộng sau này (ví dụ thêm “đặt cược vui” hoặc “phòng đua riêng”).
+- Viết rõ ràng, có comment mô tả logic chính.
+- Khi hoàn tất, website chạy được bằng lệnh:
+npm install
+node server.js
+
+markdown
+Copy code
+- Khi truy cập `http://localhost:3000`, hiển thị trang user.
+- Khi truy cập `http://localhost:3000/admin`, hiển thị trang admin.
+
+---
+
+## 🌟 MỞ RỘNG (TUỲ CHỌN)
+- Cho phép user chọn “cá cược vui” vịt nào thắng.
+- Lưu lịch sử cuộc đua vào file JSON hoặc MongoDB.
+- Hiển thị bảng xếp hạng tổng.
+- Cho phép nhiều cuộc đua song song (nhiều phòng đua).
+- Tích hợp khung chat realtime trong cuộc đua.
+
+---
+
+## ✅ KẾT LUẬN
+Hãy sinh ra toàn bộ mã nguồn (frontend + backend) cho website trò đua vịt trực tuyến theo yêu cầu trên, gồm:
+- `server.js`
+- `public/index.html`
+- `public/admin.html`
+- `public/assets/css/style.css`
+- `public/assets/js/script.js`
+
+Mã code phải **chạy được ngay**, có **Socket.IO realtime**, và **UI đẹp, responsive**.

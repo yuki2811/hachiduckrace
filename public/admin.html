@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Admin Panel - Quản lý cuộc đua vịt trực tuyến">
+    <meta name="robots" content="noindex, nofollow">
+    <title>🦆 HachiDuckRace Admin - Bảng Điều Khiển</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'admin-blue': '#1E40AF',
+                        'admin-green': '#059669',
+                        'admin-red': '#DC2626'
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="assets/css/style.css">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦆</text></svg>">
+</head>
+<body class="bg-gradient-to-br from-gray-100 to-gray-300 min-h-screen">
+    <!-- Login Modal -->
+    <div id="loginModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl p-8 shadow-2xl max-w-md mx-4 w-full">
+            <div class="text-center mb-6">
+                <span class="text-5xl mb-4 block">🦆</span>
+                <h2 class="text-2xl font-bold text-gray-800">Admin Login</h2>
+                <p class="text-gray-600 mt-2">Đăng nhập để quản lý cuộc đua</p>
+            </div>
+            
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <input type="email" id="email" required 
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                           placeholder="admin@duckrace.com">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Mật khẩu</label>
+                    <input type="password" id="password" required 
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                           placeholder="admin123">
+                </div>
+                
+                <button type="submit" 
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
+                    Đăng nhập
+                </button>
+            </form>
+            
+            <div class="mt-4 p-3 bg-blue-50 rounded-lg">
+                <p class="text-sm text-blue-800">
+                    <strong>Demo Account:</strong><br>
+                    Email: admin@duckrace.com<br>
+                    Password: admin123
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Admin Panel -->
+    <div id="adminPanel" class="hidden">
+        <!-- Header -->
+        <header class="bg-white shadow-lg">
+            <div class="container mx-auto px-4 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <span class="text-4xl">🦆</span>
+                        <div>
+                            <h1 class="text-2xl font-bold text-gray-800">HachiDuckRace Admin</h1>
+                            <p class="text-sm text-gray-600">Bảng điều khiển cuộc đua</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <span id="adminConnectionStatus" class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                            <span class="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
+                            Đã kết nối
+                        </span>
+                        <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors">
+                            Đăng xuất
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="container mx-auto px-4 py-8">
+            <!-- Race Control Panel -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <!-- Duck Management -->
+                <div class="bg-white rounded-2xl p-6 shadow-xl">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">🦆 Quản Lý Vịt</h3>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Cách tạo danh sách vịt</label>
+                        
+                        <!-- Toggle buttons -->
+                        <div class="flex mb-4">
+                            <button type="button" id="customNamesBtn" 
+                                    class="flex-1 px-4 py-2 text-sm font-medium rounded-l-lg border border-gray-300 bg-blue-50 text-blue-700 border-blue-300">
+                                📝 Nhập tên tùy chỉnh
+                            </button>
+                            <button type="button" id="autoNamesBtn" 
+                                    class="flex-1 px-4 py-2 text-sm font-medium rounded-r-lg border border-gray-300 bg-gray-50 text-gray-700 hover:bg-gray-100">
+                                🔢 Tự động tạo (1-N)
+                            </button>
+                        </div>
+                        
+                        <!-- Custom names input -->
+                        <div id="customNamesSection">
+                            <textarea id="duckNames" rows="6" 
+                                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                      placeholder="Nhập tên các vịt, mỗi vịt một dòng:&#10;Vịt Vàng&#10;Vịt Xanh&#10;Vịt Đỏ&#10;Vịt Tím"></textarea>
+                            <p class="text-sm text-gray-500 mt-2">Mỗi vịt một dòng, tối thiểu 2 vịt</p>
+                        </div>
+                        
+                        <!-- Auto names input -->
+                        <div id="autoNamesSection" class="hidden">
+                            <div class="flex items-center space-x-4">
+                                <label class="text-sm font-medium text-gray-700">Số lượng vịt:</label>
+                                <input type="number" id="duckCount" min="2" max="200" value="4" 
+                                       class="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <span class="text-sm text-gray-600">vịt (2-200)</span>
+                            </div>
+                            <p class="text-sm text-gray-500 mt-2">Tên vịt sẽ là: 1, 2, 3, 4, ...</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Thời gian đua (giây)</label>
+                        <div class="flex items-center space-x-4">
+                            <input type="number" id="raceDuration" min="5" max="300" value="30" 
+                                   class="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <span class="text-sm text-gray-600">giây (5-300 giây)</span>
+                        </div>
+                        <div class="mt-2 flex space-x-2">
+                            <button type="button" onclick="setRaceDuration(15)" class="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-sm rounded">15s</button>
+                            <button type="button" onclick="setRaceDuration(30)" class="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-sm rounded">30s</button>
+                            <button type="button" onclick="setRaceDuration(60)" class="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-sm rounded">60s</button>
+                            <button type="button" onclick="setRaceDuration(120)" class="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-sm rounded">120s</button>
+                        </div>
+                    </div>
+                    
+                    <div class="flex space-x-3">
+                        <button id="startRaceBtn" 
+                                class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
+                            🏁 Bắt Đầu Cuộc Đua
+                        </button>
+                        <button id="resetRaceBtn" 
+                                class="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
+                            🔄 Reset Cuộc Đua
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Race Status -->
+                <div class="bg-white rounded-2xl p-6 shadow-xl">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">📊 Trạng Thái Cuộc Đua</h3>
+                    
+                    <div id="raceStatusInfo" class="space-y-4">
+                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                            <span class="font-medium">Trạng thái:</span>
+                            <span id="currentStatus" class="px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+                                Chưa bắt đầu
+                            </span>
+                        </div>
+                        
+                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                            <span class="font-medium">Số vịt tham gia:</span>
+                            <span id="duckCount" class="font-bold text-blue-600">0</span>
+                        </div>
+                        
+                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                            <span class="font-medium">Thời gian đã trôi:</span>
+                            <span id="raceTime" class="font-mono text-sm">--:--</span>
+                        </div>
+                        
+                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                            <span class="font-medium">Thời gian còn lại:</span>
+                            <span id="remainingTime" class="font-mono text-sm text-red-600">--:--</span>
+                        </div>
+                        
+                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                            <span class="font-medium">Thời gian đua:</span>
+                            <span id="totalRaceTime" class="font-mono text-sm text-blue-600">--:--</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Race Display -->
+            <div id="liveRaceDisplay" class="hidden bg-white rounded-2xl p-6 shadow-xl mb-8">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">🏃‍♂️ Cuộc Đua Trực Tiếp</h3>
+                
+                <div class="mb-4">
+                    <div class="relative bg-gradient-to-r from-blue-200 to-blue-300 rounded-lg h-6 mb-4 overflow-hidden">
+                        <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse"></div>
+                        <div class="absolute top-0 right-0 w-12 h-full bg-gradient-to-l from-yellow-400 to-transparent"></div>
+                    </div>
+                </div>
+                
+                <div id="liveDucksContainer" class="space-y-3">
+                    <!-- Live ducks will be displayed here -->
+                </div>
+            </div>
+
+            <!-- Race Results -->
+            <div id="raceResults" class="hidden bg-white rounded-2xl p-6 shadow-xl">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">🏆 Kết Quả Cuộc Đua</h3>
+                <div id="resultsList" class="space-y-3">
+                    <!-- Results will be displayed here -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2">
+        <!-- Toast notifications will appear here -->
+    </div>
+
+    <!-- Socket.IO -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="assets/js/script.js"></script>
+</body>
+</html>
+

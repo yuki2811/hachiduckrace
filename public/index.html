@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Xem cuộc đua vịt trực tuyến realtime - Trò chơi vui nhộn và hấp dẫn">
+    <meta name="keywords" content="đua vịt, trò chơi, realtime, vịt, đua">
+    <meta name="author" content="Duck Race Team">
+    <title>🦆 HachiDuckRace - Cuộc Đua Vịt Trực Tuyến</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'duck-blue': '#4A90E2',
+                        'duck-yellow': '#FFD700',
+                        'water-blue': '#87CEEB'
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="assets/css/style.css">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦆</text></svg>">
+</head>
+<body class="bg-gradient-to-br from-water-blue to-blue-400 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white/90 backdrop-blur-sm shadow-lg">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <span class="text-4xl">🦆</span>
+                    <h1 class="text-2xl font-bold text-gray-800">HachiDuckRace</h1>
+                </div>
+                <div class="text-sm text-gray-600">
+                    <span id="connectionStatus" class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                        <span class="w-2 h-2 bg-yellow-400 rounded-full mr-2 animate-pulse"></span>
+                        Đang kết nối...
+                    </span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- Race Status -->
+        <div id="raceStatus" class="text-center mb-8">
+            <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-xl">
+                <h2 id="statusTitle" class="text-3xl font-bold text-gray-800 mb-2">Chờ cuộc đua bắt đầu</h2>
+                <p id="statusMessage" class="text-gray-600">Admin sẽ khởi động cuộc đua sớm...</p>
+                
+                <!-- Race Timer -->
+                <div id="raceTimer" class="hidden mt-4">
+                    <div class="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-4 text-white">
+                        <div class="text-sm font-medium mb-2">⏰ Thời gian đua</div>
+                        <div class="flex items-center justify-center space-x-4">
+                            <div class="text-center">
+                                <div id="remainingTime" class="text-3xl font-bold">--:--</div>
+                                <div class="text-sm opacity-80">Còn lại</div>
+                            </div>
+                            <div class="text-center">
+                                <div id="elapsedTime" class="text-2xl font-semibold">--:--</div>
+                                <div class="text-sm opacity-80">Đã trôi</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Water Track -->
+        <div id="raceTrack" class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-xl mb-8">
+            <div class="mb-6">
+                <h3 class="text-2xl font-bold text-center text-gray-800 mb-4">🏊‍♂️ Hồ Bơi 1000m - Đua Vịt</h3>
+                
+                <!-- Water Pool with Start/Finish Lines -->
+                <div id="poolContainer" class="relative bg-gradient-to-b from-blue-300 via-blue-400 to-blue-500 rounded-2xl mb-4 overflow-hidden shadow-inner" style="height: 400px;">
+                    <!-- Water Ripples Effect -->
+                    <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
+                    <div class="absolute inset-0 bg-gradient-to-b from-transparent via-white/10 to-transparent"></div>
+                    
+                    <!-- Start Line -->
+                    <div class="absolute left-4 top-0 w-1 h-full bg-white/80 shadow-lg"></div>
+                    <div class="absolute left-2 top-2 text-white text-xs font-bold bg-black/30 px-2 py-1 rounded">START</div>
+                    
+                    <!-- Finish Line -->
+                    <div class="absolute right-2 top-0 w-1 h-full bg-yellow-400 shadow-lg"></div>
+                    <div class="absolute right-3 top-2 text-white text-xs font-bold bg-black/30 px-2 py-1 rounded">FINISH</div>
+                    
+                    <!-- Water Waves -->
+                    <div class="absolute bottom-0 left-0 w-full h-4 bg-gradient-to-t from-blue-600/30 to-transparent"></div>
+                    <div class="absolute bottom-2 left-0 w-full h-2 bg-gradient-to-t from-blue-700/20 to-transparent"></div>
+                    
+                    <!-- Ducks Swimming in Water -->
+                    <div id="ducksContainer" class="absolute inset-0">
+                        <!-- Ducks will be dynamically added here -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Speed Display -->
+            <div id="speedDisplay" class="hidden mt-6">
+                <h4 class="text-lg font-semibold text-gray-800 mb-3">📊 Vận Tốc Bơi Thời Gian Thực (m/s)</h4>
+                <div id="speedList" class="space-y-2">
+                    <!-- Speed data will be dynamically added here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Winner Announcement -->
+        <div id="winnerAnnouncement" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+            <div class="bg-white rounded-2xl p-8 shadow-2xl max-w-md mx-4 text-center animate-bounce">
+                <div class="text-6xl mb-4">🏆</div>
+                <h3 class="text-3xl font-bold text-yellow-600 mb-2">Chúc Mừng!</h3>
+                <p id="winnerName" class="text-xl text-gray-700 mb-4"></p>
+                <button onclick="closeWinnerModal()" class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded-lg font-semibold transition-colors">
+                    Đóng
+                </button>
+            </div>
+        </div>
+
+        <!-- Race Results -->
+        <div id="raceResults" class="hidden bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-xl">
+            <h3 class="text-2xl font-bold text-center text-gray-800 mb-6">🏆 Bảng Xếp Hạng Cuộc Đua</h3>
+            
+            <!-- Winner Highlight -->
+            <div id="winnerHighlight" class="mb-6 p-4 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-lg text-white text-center">
+                <div class="text-4xl mb-2">🏆</div>
+                <div class="text-2xl font-bold" id="winnerName">Vịt Thắng Cuộc</div>
+                <div class="text-sm opacity-90" id="winnerMessage">Chúc mừng vịt thắng cuộc!</div>
+            </div>
+            
+            <!-- Full Results Table -->
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Hạng</th>
+                            <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Vịt</th>
+                            <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Vị trí</th>
+                            <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Thời gian</th>
+                            <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsTableBody" class="divide-y divide-gray-200">
+                        <!-- Results will be dynamically added here -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Race Summary -->
+            <div id="raceSummary" class="mt-6 p-4 bg-gray-50 rounded-lg">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                    <div>
+                        <div class="text-2xl font-bold text-blue-600" id="totalDucks">0</div>
+                        <div class="text-sm text-gray-600">Tổng số vịt</div>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-bold text-green-600" id="finishedDucks">0</div>
+                        <div class="text-sm text-gray-600">Về đích</div>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-bold text-purple-600" id="raceDuration">0s</div>
+                        <div class="text-sm text-gray-600">Thời gian đua</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white/90 backdrop-blur-sm mt-12">
+        <div class="container mx-auto px-4 py-6">
+            <div class="text-center text-gray-600">
+                <p>&copy; 2024 Duck Race - Trò đua vịt trực tuyến vui nhộn</p>
+                <p class="text-sm mt-2">Được phát triển với ❤️ và Socket.IO</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Socket.IO -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="assets/js/script.js"></script>
+</body>
+</html>
+
