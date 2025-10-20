@@ -616,24 +616,26 @@ class DuckRaceApp {
         // Use duck ID as stable identifier for vertical position
         const duckId = parseInt(duck.id.replace('duck_', ''));
         
-        // Điều chỉnh vị trí dọc dựa trên số lượng vịt (x2 height)
+        // Điều chỉnh vị trí dọc dựa trên số lượng vịt: phân bố đều với khoảng đệm trên/dưới
         const duckCount = this.raceState.ducks.length;
         // Lấy chiều cao thực tế của pool container
         const poolContainer = document.getElementById('poolContainer');
         const poolHeight = poolContainer ? poolContainer.offsetHeight : Math.min(1400, Math.max(400, duckCount * 100));
-        const maxVisibleDucks = Math.floor(1400 / 100); // 14 vịt có thể hiển thị rõ ràng
-        
-        let topPosition;
-        if (duckCount <= maxVisibleDucks) {
-            // Đủ chỗ cho tất cả vịt - mỗi vịt cách nhau 100px (x2)
-            topPosition = 60 + (duckId * 100);
-        } else {
-            // Quá nhiều vịt - phân bố đều trong hồ bơi
-            const availableHeight = poolHeight - 120; // Trừ đi margin top/bottom (x2)
-            const spacing = availableHeight / (duckCount - 1);
-            topPosition = 60 + (duckId * spacing);
-        }
-        
+
+        // Tính thứ tự ổn định theo ID để không nhảy vị trí khi cập nhật
+        const ducksSortedById = [...this.raceState.ducks].sort((a, b) => {
+            const aId = parseInt(a.id.replace('duck_', ''));
+            const bId = parseInt(b.id.replace('duck_', ''));
+            return aId - bId;
+        });
+        const orderIndex = ducksSortedById.findIndex(d => d.id === duck.id); // 0..duckCount-1
+
+        const topPadding = 60; // lề trên/dưới để không chạm mép
+        const availableHeight = Math.max(0, poolHeight - topPadding * 2);
+        // spacing đều, để lại lề trên và dưới: chia cho (duckCount + 1)
+        const spacing = duckCount > 0 ? (availableHeight / (duckCount + 1)) : 0;
+        let topPosition = topPadding + (orderIndex + 1) * spacing;
+
         // Đảm bảo vị trí không vượt quá chiều cao hồ bơi
         topPosition = Math.min(topPosition, poolHeight - 60);
         

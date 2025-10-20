@@ -19,6 +19,29 @@ const io = socketIo(server, {
 const PORT = process.env.PORT || 3333;
 const JWT_SECRET = 'duck-race-secret-key-2024';
 
+// Chọn kiểu tốc độ cho vịt
+function pickSpeedProfile() {
+  const profiles = [
+    'steady',        // ổn định
+    'sprinter',      // bứt tốc đầu
+    'finisher',      // bứt tốc cuối
+    'bursty',        // bùng nổ ngẫu nhiên
+    'fatigue',       // nhanh đầu rồi mệt
+    'rollercoaster', // lên xuống mạnh
+    'zigzag',        // dao động nhanh
+    'lateBloomer',   // chậm đầu, mạnh giữa/cuối
+    'pacer'          // duy trì nhịp với điều chỉnh nhẹ
+  ];
+  const weights = [0.15, 0.12, 0.12, 0.12, 0.12, 0.1, 0.09, 0.09, 0.09];
+  const r = Math.random();
+  let acc = 0;
+  for (let i = 0; i < profiles.length; i++) {
+    acc += weights[i];
+    if (r <= acc) return profiles[i];
+  }
+  return profiles[0];
+}
+
 // Hàm weighted random selection
 function getWeightedRandomIndex(probabilities) {
   const random = Math.random();
@@ -199,7 +222,11 @@ function startRace(duckNames, raceDuration = 30000) {
       finished: false,
       finishTime: null,
       isWinner: isWinner,
-      personality: Math.random()
+      personality: Math.random(),
+      profile: pickSpeedProfile(),
+      energy: 1.0,
+      burstCooldown: 0,
+      slowCooldown: 0
     };
   });
   
@@ -272,7 +299,7 @@ function simulateRace() {
           .sort((a, b) => b.position - a.position)
           .findIndex(d => d.id === duck.id) + 1;
         
-        // Weighted Random với Noise cho tất cả vịt
+        // Weighted Random với Noise cho tất cả vịt + hồ sơ tốc độ (profile)
         const positionProgress = duck.position / 100; // 0-1
         // timeProgress đã được khai báo ở trên
         
@@ -296,7 +323,8 @@ function simulateRace() {
         const noise3 = Math.sin(timeProgress * Math.PI * 4 + positionProgress * Math.PI * 2) * 0.1;
         const combinedNoise = noise1 + noise2 + noise3;
         
-        // Weighted Random dựa trên vị trí và vai trò
+        // Hồ sơ tốc độ: điều chỉnh theo profile
+        // Các hệ số mặc định
         let baseWeight, variance, burstChance, slowChance;
         
         if (duck.isWinner) {
@@ -342,6 +370,43 @@ function simulateRace() {
             slowChance = 0.5;
           }
         }
+
+        // Điều chỉnh thêm theo profile cá nhân
+        switch (duck.profile) {
+          case 'steady':
+            variance *= 0.5;
+            burstChance *= 0.5;
+            slowChance *= 0.5;
+            break;
+          case 'sprinter':
+            if (positionProgress < 0.4) { baseWeight *= 1.2; burstChance *= 1.5; }
+            else { slowChance *= 1.3; }
+            break;
+          case 'finisher':
+            if (positionProgress > 0.7) { baseWeight *= 1.4; burstChance *= 1.6; }
+            else { slowChance *= 1.1; }
+            break;
+          case 'bursty':
+            variance *= 1.4; burstChance *= 1.8;
+            break;
+          case 'fatigue':
+            if (positionProgress < 0.5) { baseWeight *= 1.2; }
+            else { baseWeight *= 0.8; slowChance *= 1.4; }
+            break;
+          case 'rollercoaster':
+            variance *= 1.6; // dao động mạnh
+            break;
+          case 'zigzag':
+            variance *= 1.2; burstChance *= 1.2; slowChance *= 1.2;
+            break;
+          case 'lateBloomer':
+            if (positionProgress < 0.4) { baseWeight *= 0.7; }
+            else { baseWeight *= 1.3; burstChance *= 1.3; }
+            break;
+          case 'pacer':
+            variance *= 0.7; // giữ nhịp ổn định hơn
+            break;
+        }
         
         // Tính toán tốc độ với weighted random
         let speedMultiplier = baseWeight + (Math.random() - 0.5) * variance;
@@ -374,6 +439,20 @@ function simulateRace() {
         
         // Áp dụng noise
         speedMultiplier += combinedNoise;
+
+        // Sự kiện ngẫu nhiên hiếm: trượt nước hoặc bắt được sóng tốt
+        if (duck.burstCooldown > 0) duck.burstCooldown -= 1;
+        if (duck.slowCooldown > 0) duck.slowCooldown -= 1;
+        const rareEventRoll = Math.random();
+        if (rareEventRoll < 0.01 && duck.burstCooldown === 0) {
+          // Sóng đẩy - tăng mạnh trong chốc lát
+          speedMultiplier *= 2.5;
+          duck.burstCooldown = 30; // ~3s (100ms tick)
+        } else if (rareEventRoll > 0.99 && duck.slowCooldown === 0) {
+          // Trượt nước - giảm mạnh trong chốc lát
+          speedMultiplier *= 0.3;
+          duck.slowCooldown = 30;
+        }
         
         // Debug: Kiểm tra giá trị sau khi áp dụng noise
         if (isNaN(speedMultiplier)) {
@@ -446,6 +525,14 @@ function simulateRace() {
           maxSpeedMultiplier = 2; // 10% cuối - vịt thắng cuộc bứt tốc
         }
         currentSpeed = Math.max(0.01, Math.min(currentSpeed, duck.baseSpeed * maxSpeedMultiplier));
+
+        // Rubber-banding nhẹ: vịt quá tụt hậu nhận boost nhỏ, vịt quá dẫn trước bị giảm nhẹ
+        const lead = duck.position - (raceState.ducks.reduce((sum, d) => sum + d.position, 0) / raceState.ducks.length);
+        if (lead < -15) {
+          currentSpeed *= 1.15;
+        } else if (lead > 15) {
+          currentSpeed *= 0.9;
+        }
         
         // Cập nhật tốc độ
         duck.speed = currentSpeed;
